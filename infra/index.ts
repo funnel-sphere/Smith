@@ -131,7 +131,7 @@ const backendService = new gcp.cloudrunv2.Service(
     template: {
       serviceAccount: serviceAccount.email,
       scaling: {
-        minInstanceCount: 1,
+        minInstanceCount: 0,
         maxInstanceCount: 5,
       },
       timeout: "3600s",
@@ -141,10 +141,10 @@ const backendService = new gcp.cloudrunv2.Service(
           image: backendImage,
           resources: {
             limits: {
-              memory: "2Gi",
-              cpu: "2",
+              memory: "1Gi",
+              cpu: "1",
             },
-            cpuIdle: false, // Keep CPU allocated for WebSocket
+            cpuIdle: true,
           },
           ports: {
             containerPort: 8080,

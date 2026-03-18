@@ -37,3 +37,5 @@ firebase-debug.log
 
 # Misc
 *.log
+
+internal/

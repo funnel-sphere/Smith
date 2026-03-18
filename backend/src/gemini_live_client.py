@@ -102,6 +102,8 @@ class GeminiLiveClient:
         except Exception as e:
             print(f"[Gemini] Receive loop error: {e}")
             self._connected = False
+            if "1008" in str(e) or "not found" in str(e).lower() or "GoAway" in str(e):
+                asyncio.create_task(self._reconnect())
         finally:
             print(f"[Gemini] Receive loop ended ({recv_count} msgs)")
 
@@ -160,6 +162,29 @@ class GeminiLiveClient:
 
         if response.go_away:
             print(f"[Gemini] GoAway received, time_left={response.go_away.time_left}s")
+
+    async def _reconnect(self) -> None:
+        """Reconnect to Gemini Live API with exponential backoff."""
+        max_retries = 3
+        for attempt in range(max_retries):
+            delay = 2 ** (attempt + 1)
+            print(f"[Gemini] Reconnecting {attempt+1}/{max_retries} in {delay}s...")
+            await asyncio.sleep(delay)
+            if self._cm:
+                try:
+                    await self._cm.__aexit__(None, None, None)
+                except Exception:
+                    pass
+                self._cm = None
+                self._session = None
+            try:
+                await self.connect()
+                if self._connected:
+                    print(f"[Gemini] Reconnected on attempt {attempt+1}")
+                    return
+            except Exception as e:
+                print(f"[Gemini] Reconnect {attempt+1} failed: {e}")
+        print("[Gemini] All reconnect attempts failed")
 
     # --- Direct send methods (no queues) ---
 
